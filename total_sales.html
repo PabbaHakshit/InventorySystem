@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Sales</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom right, #001f3f, #ff4136, #ffb6c1); /* Deep navy blue to bright red to pale pink gradient */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 80%;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            border: 2px solid #aaa;
+        }
+
+        th,
+        td {
+            border: 2px solid #aaa;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .clear-btn {
+            padding: 10px 20px;
+            background-color: #c0392b;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background-color: #e74c3c;
+        }
+
+        .filter-container {
+            margin-bottom: 20px;
+        }
+
+        .filter-container select {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Total Sales</h2>
+        <div class="filter-container">
+            <select id="rowSelect">
+                <option value="all">Select All</option>
+            </select>
+            <button class="clear-btn" onclick="clearSelectedRow()">Delete Selected Row</button>
+        </div>
+        <table id="totalSalesTable">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Product ID</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                    <th>Price per Unit</th>
+                    <th>Profit per Unit</th>
+                    <th>Total Price</th>
+                    <th>Total Profit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Table body will be filled dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function renderTotalSalesTable() {
+            var totalSalesData = JSON.parse(localStorage.getItem('totalSales')) || [];
+            var tableBody = document.querySelector('#totalSalesTable tbody');
+            tableBody.innerHTML = '';
+
+            var selectOptions = document.getElementById('rowSelect');
+            selectOptions.innerHTML = ''; // Clear existing options
+
+            // Add Select All option
+            var selectAllOption = document.createElement('option');
+            selectAllOption.value = "all";
+            selectAllOption.textContent = "Select All";
+            selectOptions.appendChild(selectAllOption);
+
+            // Aggregate data by product ID
+            var aggregatedData = totalSalesData.reduce((acc, item) => {
+                if (!acc[item.id]) {
+                    acc[item.id] = { ...item, totalPrice: item.quantity * item.pricePerUnit, totalProfit: item.quantity * item.profitPerUnit };
+                } else {
+                    acc[item.id].quantity += item.quantity;
+                    acc[item.id].totalPrice += item.quantity * item.pricePerUnit;
+                    acc[item.id].totalProfit += item.quantity * item.profitPerUnit;
+                }
+                return acc;
+            }, {});
+
+            // Convert aggregated data object back to array
+            var aggregatedArray = Object.values(aggregatedData);
+
+            aggregatedArray.forEach(function (item, index) {
+                var row = `<tr>
+                            <td>${index + 1}</td>
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.pricePerUnit}</td>
+                            <td>${item.profitPerUnit}</td>
+                            <td>${item.totalPrice.toFixed(2)}</td>
+                            <td>${item.totalProfit.toFixed(2)}</td>
+                        </tr>`;
+                tableBody.insertAdjacentHTML('beforeend', row);
+
+                var option = document.createElement('option');
+                option.value = index;
+                option.textContent = `Row ${index + 1}`;
+                selectOptions.appendChild(option);
+            });
+        }
+
+        function clearSelectedRow() {
+            var selectedIndex = document.getElementById('rowSelect').value;
+            var totalSalesData = JSON.parse(localStorage.getItem('totalSales')) || [];
+
+            if (selectedIndex === "all") {
+                localStorage.removeItem('totalSales');
+            } else if (selectedIndex !== "") {
+                totalSalesData.splice(selectedIndex, 1);
+                localStorage.setItem('totalSales', JSON.stringify(totalSalesData));
+            }
+            renderTotalSalesTable(); // Refresh the table
+        }
+
+        // Render the table on page load
+        renderTotalSalesTable();
+    </script>
+</body>
+
+</html>
